@@ -12,7 +12,6 @@ try:
     from requests_html import HTMLSession
     HAS_HTMLSESSION = True
 except ImportError:
-    st.warning("For improved social media scraping, please install 'requests-html' in your requirements.txt. Falling back to plain requests.")
     HAS_HTMLSESSION = False
 
 # Set up your API keys from streamlit secrets

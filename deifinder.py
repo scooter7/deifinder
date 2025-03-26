@@ -183,7 +183,7 @@ def process_excel(file):
 st.markdown(
     """
     <style>
-    /* Main background color */
+    /* Set main background color */
     .reportview-container, .main {
         background-color: #e2e1e1;
     }
@@ -195,37 +195,25 @@ st.markdown(
         border-radius: 8px;
         margin-bottom: 20px;
     }
-    .header h1 {
-        color: #e2e1e1;
-        margin-top: 10px;
-    }
-    /* Section header styling */
-    h2, h3 {
-        color: #740B0B;
-    }
-    /* Containers for each function */
-    .section-url {
-        background-color: #FAD4D4;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    .section-doc {
-        background-color: #D4E3F9;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    .section-revision {
-        background-color: #D4F9D4;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    /* Ensure the header image is visible */
     .header img {
         display: block;
-        margin: 0 auto;
+        margin: 0 auto 20px auto;
+    }
+    .header h1 {
+        color: #e2e1e1;
+        margin: 0;
+    }
+    /* Section container styling using only the two hex codes */
+    .section-container {
+        background-color: #e2e1e1;
+        border: 2px solid #740B0B;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: #740B0B;
+    }
+    h2, h3 {
+        color: #740B0B;
     }
     </style>
     """,
@@ -233,7 +221,7 @@ st.markdown(
 )
 
 #################################
-# Header with Image and Title   #
+# Header with Logo and Title    #
 #################################
 st.markdown(
     """
@@ -257,10 +245,10 @@ You can also paste text into the AI chat section below to receive a revised vers
     """
 )
 
-#######################################
-# URL Analysis Section (with styling) #
-#######################################
-st.markdown('<div class="section-url">', unsafe_allow_html=True)
+##############################################
+# URL Analysis Section (within container)    #
+##############################################
+st.markdown('<div class="section-container">', unsafe_allow_html=True)
 st.header("URL Analysis")
 url_input = st.text_input("Enter comma-separated URLs:")
 url_results = []
@@ -285,10 +273,10 @@ if url_input:
         st.markdown("---")
 st.markdown('</div>', unsafe_allow_html=True)
 
-###########################################
-# Document Analysis Section (with styling)#
-###########################################
-st.markdown('<div class="section-doc">', unsafe_allow_html=True)
+##############################################
+# Document Analysis Section (within container)
+##############################################
+st.markdown('<div class="section-container">', unsafe_allow_html=True)
 st.header("Document Analysis")
 uploaded_files = st.file_uploader("Upload documents (PDF, DOCX, Excel, TXT)", type=["pdf", "docx", "xlsx", "xls", "txt"], accept_multiple_files=True)
 doc_results = {}
@@ -325,10 +313,10 @@ if uploaded_files:
             st.markdown("---")
 st.markdown('</div>', unsafe_allow_html=True)
 
-#############################################
-# Revision Suggestions Section (with styling)
-#############################################
-st.markdown('<div class="section-revision">', unsafe_allow_html=True)
+####################################################
+# Revision Suggestions Section (within container)  #
+####################################################
+st.markdown('<div class="section-container">', unsafe_allow_html=True)
 st.header("AI Chat for Revision Suggestions")
 st.write(
     """

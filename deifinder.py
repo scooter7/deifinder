@@ -241,8 +241,7 @@ if uploaded_files:
 st.header("AI Chat for Revision Suggestions")
 st.write(
     """
-Paste in text that contains one or more of the above terms. The app will call the OpenAI API to suggest a revised version that excludes all of the listed keywords.
-**Important:** The revised output must not include any of the glossary keywords.
+Paste in text that contains one or more of the above terms.
     """
 )
 user_text = st.text_area("Enter text for revision suggestions:")

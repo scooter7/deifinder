@@ -263,17 +263,20 @@ Paste in text that contains one or more of the above terms.
 user_text = st.text_area("Enter text for revision suggestions:")
 if st.button("Get Revision Suggestions"):
     if user_text.strip():
+        # Strengthened prompt with explicit instructions to remove any occurrences of the keywords.
         prompt = (
-            f"Below is some text that may include any of the following terms:\n{', '.join(KEYWORDS)}\n\n"
-            "Please suggest a revised version of the text that excludes all of these terms. "
-            "Ensure that the final output does not contain any of the listed keywords.\n\n"
-            f"Text:\n{user_text}\n\nRevised text:"
+            f"Below is some text that may include one or more of the following terms:\n{', '.join(KEYWORDS)}\n\n"
+            "Your task is to completely revise the text by removing or replacing any instances of the above keywords. "
+            "The final output must not include any form of the following keywords:\n"
+            f"{', '.join(KEYWORDS)}.\n\n"
+            f"Text:\n{user_text}\n\n"
+            "Revised text (with none of the above keywords present):"
         )
         try:
             response = openai.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant that revises text."},
+                    {"role": "system", "content": "You are a helpful assistant that revises text to exclude specified terms."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.2,

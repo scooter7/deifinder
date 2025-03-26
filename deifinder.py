@@ -180,10 +180,53 @@ def process_excel(file):
         results.append({"error": str(e)})
     return results
 
+#################################
+# Custom CSS for Aesthetic Look #
+#################################
+st.markdown(
+    """
+    <style>
+    /* Set the main background color */
+    .reportview-container {
+        background-color: #e2e1e1;
+    }
+    /* Style for header */
+    .header {
+        background-color: #740B0B;
+        padding: 20px;
+        text-align: center;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .header h1 {
+        color: #e2e1e1;
+        margin-top: 10px;
+    }
+    /* Style for section headers */
+    h2, h3 {
+        color: #740B0B;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+#################################
+# Header with Image and Title   #
+#################################
+st.markdown(
+    """
+    <div class="header">
+        <img src="https://carnegiehighered.com/wp-content/uploads/2021/04/cd-logo-red.png" alt="Logo" width="150">
+        <h1>Keyword Search and AI Revision Tool</h1>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 #####################
 # Streamlit Layout  #
 #####################
-st.title("Keyword Search and AI Revision Tool")
 st.write(
     """
 This app searches for specific terms related to diversity, equity, inclusion, and more within provided URLs and documents.

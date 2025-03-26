@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-import re
 import openai
 import io
 import pandas as pd
@@ -12,7 +11,6 @@ import docx
 
 # Set up your API keys from streamlit secrets
 openai.api_key = st.secrets["openai_api_key"]
-# (Google Custom Search keys are available in st.secrets if needed)
 google_api_key = st.secrets.get("google_custom_search_key", None)
 google_cse_id = st.secrets.get("google_cse_id", None)
 
@@ -43,7 +41,7 @@ KEYWORDS = [
     "HSI", "identity sphere", "immigrant", "implicit bias", "impostor syndrome", "in‐group bias", "favoritism", "in-groups", "out-groups",
     "inclusion", "inclusive excellence", "inclusive language", "Indigenous peoples", "institutional oppression", "intersectionality",
     "intercultural competency", "intergroup conflict", "internalized oppression", "internalized racism", "intersex", "invisible minority",
-    "Islamophobia", "Ism", "justice", "Latinx", "lesbian", "LGBT", "LGBTQ", "LGBTQIAA+", "lines of difference", "linguicism", "lookism",
+    "Islamophobia", "justice", "Latinx", "lesbian", "LGBT", "LGBTQ", "LGBTQIAA+", "lines of difference", "linguicism", "lookism",
     "major bodily functions", "major life activities", "male-bodied", "marginalize", "marginalization", "media literacy", "microaggression",
     "micro-insults", "micro-invalidation", "minority", "minority groups", "minorities", "misogyny", "mobility", "model minority",
     "MSI", "MTF", "M2F", "M to F", "MTM", "FTF", "multicultural", "multiethnic", "multiplicity", "multiracial", "naming", "national origin",
@@ -64,7 +62,7 @@ KEYWORDS = [
     "transmisogyny", "transphobia", "transsexual", "Two Spirit", "unconscious bias", "underprivileged", "underrepresented communities",
     "underutilization", "undue hardship", "undocumented", "undocumented student", "union", "unisex", "universal design", "UPstander",
     "upward mobility", "upward social mobility", "veteran status", "white fragility", "white privilege", "white supremacy", "whiteness",
-    "worldview", "xenophobia", "Yes Means Yes", "ze", "zir"
+    "worldview", "xenophobia", "Yes Means Yes", "zir"
 ]
 
 def search_keywords(text, keywords):
@@ -189,10 +187,21 @@ if url_input:
     for url in urls:
         result = process_url(url)
         url_results.append(result)
-    st.subheader("Results")
-    st.json(url_results)
+    st.subheader("URL Analysis Results")
+    for res in url_results:
+        st.write(f"**URL:** {res.get('url')}")
+        if "error" in res:
+            st.write(f"Error: {res['error']}")
+        else:
+            if res.get("keywords_found"):
+                st.write("**Keywords found:** " + ", ".join(res["keywords_found"]))
+            else:
+                st.write("No keywords found.")
+            if res.get("social_media_date"):
+                st.write("**Social media post date:** " + str(res["social_media_date"]))
+        st.markdown("---")
 
-### Document Upload Section ###
+### Document Analysis Section ###
 st.header("Document Analysis")
 uploaded_files = st.file_uploader("Upload documents (PDF, DOCX, Excel, TXT)", type=["pdf", "docx", "xlsx", "xls", "txt"], accept_multiple_files=True)
 doc_results = {}
@@ -210,20 +219,34 @@ if uploaded_files:
         else:
             res = [{"error": "Unsupported file type"}]
         doc_results[file.name] = res
+
     st.subheader("Document Analysis Results")
-    st.json(doc_results)
+    for filename, analyses in doc_results.items():
+        st.write(f"### {filename}")
+        for analysis in analyses:
+            if "error" in analysis:
+                st.write(f"Error: {analysis['error']}")
+            else:
+                if "page" in analysis:
+                    st.write(f"**Page {analysis['page']}:** Keywords found: " + ", ".join(analysis["keywords_found"]))
+                elif "paragraph" in analysis:
+                    st.write(f"**Paragraph {analysis['paragraph']}:** Keywords found: " + ", ".join(analysis["keywords_found"]))
+                elif "sheet" in analysis:
+                    st.write(f"**Sheet {analysis['sheet']}:** Keywords found: " + ", ".join(analysis["keywords_found"]))
+                elif "section" in analysis:
+                    st.write(f"**Section ({analysis['section']}):** Keywords found: " + ", ".join(analysis["keywords_found"]))
+            st.markdown("---")
 
 ### AI Chat Section for Revision Suggestions ###
 st.header("AI Chat for Revision Suggestions")
 st.write(
     """
-Paste in text that contains one or more of the above terms. The app will call the OpenAI API to suggest revised versions that avoid using these terms.
+Paste in text that contains one or more of the above terms. The app will call the OpenAI API to suggest a revised version that avoids using these terms.
     """
 )
 user_text = st.text_area("Enter text for revision suggestions:")
 if st.button("Get Revision Suggestions"):
     if user_text.strip():
-        # Create a prompt instructing the AI to revise the text to remove any references to the keywords.
         prompt = (
             f"Below is some text that may include any of the following terms:\n{', '.join(KEYWORDS)}\n\n"
             "Please suggest a revised version of the text that excludes these terms. "
@@ -239,7 +262,7 @@ if st.button("Get Revision Suggestions"):
                 ],
                 temperature=0.2,
             )
-            suggestion = response.choices[0].message["content"]
+            suggestion = response.choices[0].message.content
             st.subheader("Revision Suggestions")
             st.write(suggestion)
         except Exception as e:

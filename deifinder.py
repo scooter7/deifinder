@@ -9,6 +9,12 @@ import pandas as pd
 import PyPDF2
 import docx
 
+# Optional: For social media pages that need JS rendering
+try:
+    from requests_html import HTMLSession
+except ImportError:
+    st.warning("For improved social media scraping, please install 'requests-html' in your requirements.txt.")
+
 # Set up your API keys from streamlit secrets
 openai.api_key = st.secrets["openai_api_key"]
 google_api_key = st.secrets.get("google_custom_search_key", None)
@@ -82,27 +88,40 @@ def search_keywords(text, keywords):
 ##########################
 def process_url(url):
     result = {"url": url, "keywords_found": []}
+    social_domains = ["twitter.com", "facebook.com", "instagram.com", "linkedin.com", "tiktok.com"]
     try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            html = response.text
-            soup = BeautifulSoup(html, "html.parser")
-            # Extract text from the page
-            text = soup.get_text(separator=" ")
-            found = search_keywords(text, KEYWORDS)
-            result["keywords_found"] = found
-
-            # Special handling for social media channels:
-            social_domains = ["twitter.com", "facebook.com", "instagram.com", "linkedin.com", "tiktok.com"]
-            if any(domain in url for domain in social_domains):
-                # Attempt to extract a date from a <time> tag or meta tags as available
-                date = None
-                time_tag = soup.find("time")
-                if time_tag and time_tag.has_attr("datetime"):
-                    date = time_tag["datetime"]
-                result["social_media_date"] = date
+        # Use requests-html for social media sites to render JavaScript if available.
+        if any(domain in url for domain in social_domains):
+            try:
+                session = HTMLSession()
+                r = session.get(url, timeout=15)
+                r.html.render(timeout=20)
+                html = r.html.html
+            except Exception as render_e:
+                st.warning(f"JS rendering failed for {url}: {render_e}")
+                # Fallback to normal requests
+                r = requests.get(url, timeout=10)
+                html = r.text
         else:
-            result["error"] = f"HTTP Status Code {response.status_code}"
+            r = requests.get(url, timeout=10)
+            if r.status_code != 200:
+                result["error"] = f"HTTP Status Code {r.status_code}"
+                return result
+            html = r.text
+
+        soup = BeautifulSoup(html, "html.parser")
+        # Extract text from the page
+        text = soup.get_text(separator=" ")
+        found = search_keywords(text, KEYWORDS)
+        result["keywords_found"] = found
+
+        # Special handling for social media channels to extract date if available
+        if any(domain in url for domain in social_domains):
+            date = None
+            time_tag = soup.find("time")
+            if time_tag and time_tag.has_attr("datetime"):
+                date = time_tag["datetime"]
+            result["social_media_date"] = date
     except Exception as e:
         result["error"] = str(e)
     return result
@@ -241,13 +260,13 @@ if uploaded_files:
 st.header("AI Chat for Revision Suggestions")
 st.write(
     """
-Paste in text that contains one or more of the above terms.
+Paste in text that contains one or more of the above terms. The app will call the OpenAI API to suggest a revised version that excludes all of the listed keywords.
+**Important:** The revised output must not include any of the glossary keywords.
     """
 )
 user_text = st.text_area("Enter text for revision suggestions:")
 if st.button("Get Revision Suggestions"):
     if user_text.strip():
-        # Updated prompt explicitly instructing removal of all keywords
         prompt = (
             f"Below is some text that may include any of the following terms:\n{', '.join(KEYWORDS)}\n\n"
             "Please suggest a revised version of the text that excludes all of these terms. "
@@ -261,7 +280,7 @@ if st.button("Get Revision Suggestions"):
                     {"role": "system", "content": "You are a helpful assistant that revises text."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.5,
+                temperature=0.2,
             )
             suggestion = response.choices[0].message.content
             st.subheader("Revision Suggestions")

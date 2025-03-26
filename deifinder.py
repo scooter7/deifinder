@@ -4,16 +4,16 @@ from bs4 import BeautifulSoup
 import openai
 import io
 import pandas as pd
-
-# For processing documents
 import PyPDF2
 import docx
 
-# Optional: For social media pages that need JS rendering
+# Try importing HTMLSession from requests-html
 try:
     from requests_html import HTMLSession
+    HAS_HTMLSESSION = True
 except ImportError:
-    st.warning("For improved social media scraping, please install 'requests-html' in your requirements.txt.")
+    st.warning("For improved social media scraping, please install 'requests-html' in your requirements.txt. Falling back to plain requests.")
+    HAS_HTMLSESSION = False
 
 # Set up your API keys from streamlit secrets
 openai.api_key = st.secrets["openai_api_key"]
@@ -47,7 +47,7 @@ KEYWORDS = [
     "HSI", "identity sphere", "immigrant", "implicit bias", "impostor syndrome", "in‐group bias", "favoritism", "in-groups", "out-groups",
     "inclusion", "inclusive excellence", "inclusive language", "Indigenous peoples", "institutional oppression", "intersectionality",
     "intercultural competency", "intergroup conflict", "internalized oppression", "internalized racism", "intersex", "invisible minority",
-    "Islamophobia", "justice", "Latinx", "lesbian", "LGBT", "LGBTQ", "LGBTQIAA+", "lines of difference", "linguicism", "lookism",
+    "Islamophobia", "Ism", "justice", "Latinx", "lesbian", "LGBT", "LGBTQ", "LGBTQIAA+", "lines of difference", "linguicism", "lookism",
     "major bodily functions", "major life activities", "male-bodied", "marginalize", "marginalization", "media literacy", "microaggression",
     "micro-insults", "micro-invalidation", "minority", "minority groups", "minorities", "misogyny", "mobility", "model minority",
     "MSI", "MTF", "M2F", "M to F", "MTM", "FTF", "multicultural", "multiethnic", "multiplicity", "multiracial", "naming", "national origin",
@@ -68,7 +68,7 @@ KEYWORDS = [
     "transmisogyny", "transphobia", "transsexual", "Two Spirit", "unconscious bias", "underprivileged", "underrepresented communities",
     "underutilization", "undue hardship", "undocumented", "undocumented student", "union", "unisex", "universal design", "UPstander",
     "upward mobility", "upward social mobility", "veteran status", "white fragility", "white privilege", "white supremacy", "whiteness",
-    "worldview", "xenophobia", "Yes Means Yes", "zir"
+    "worldview", "xenophobia", "Yes Means Yes", "ze", "zir"
 ]
 
 def search_keywords(text, keywords):
@@ -90,16 +90,15 @@ def process_url(url):
     result = {"url": url, "keywords_found": []}
     social_domains = ["twitter.com", "facebook.com", "instagram.com", "linkedin.com", "tiktok.com"]
     try:
-        # Use requests-html for social media sites to render JavaScript if available.
-        if any(domain in url for domain in social_domains):
+        # For social media URLs, try using HTMLSession if available
+        if any(domain in url for domain in social_domains) and HAS_HTMLSESSION:
             try:
                 session = HTMLSession()
                 r = session.get(url, timeout=15)
                 r.html.render(timeout=20)
                 html = r.html.html
             except Exception as render_e:
-                st.warning(f"JS rendering failed for {url}: {render_e}")
-                # Fallback to normal requests
+                st.warning(f"JS rendering failed for {url}: {render_e}. Falling back to plain requests.")
                 r = requests.get(url, timeout=10)
                 html = r.text
         else:
@@ -110,12 +109,10 @@ def process_url(url):
             html = r.text
 
         soup = BeautifulSoup(html, "html.parser")
-        # Extract text from the page
         text = soup.get_text(separator=" ")
         found = search_keywords(text, KEYWORDS)
         result["keywords_found"] = found
 
-        # Special handling for social media channels to extract date if available
         if any(domain in url for domain in social_domains):
             date = None
             time_tag = soup.find("time")
@@ -146,7 +143,6 @@ def process_docx(file):
     results = []
     try:
         doc = docx.Document(file)
-        # DOCX does not have pages, so we use paragraph numbers.
         for i, para in enumerate(doc.paragraphs):
             text = para.text
             found = search_keywords(text, KEYWORDS)
@@ -159,7 +155,6 @@ def process_docx(file):
 def process_txt(file):
     results = []
     try:
-        # Read text file as UTF-8
         text = file.read().decode("utf-8")
         found = search_keywords(text, KEYWORDS)
         if found:
@@ -171,10 +166,8 @@ def process_txt(file):
 def process_excel(file):
     results = []
     try:
-        # Read all sheets from Excel file
         excel_data = pd.read_excel(file, sheet_name=None)
         for sheet_name, df in excel_data.items():
-            # Flatten all cell values into one string
             all_text = " ".join(df.astype(str).values.flatten().tolist())
             found = search_keywords(all_text, KEYWORDS)
             if found:
@@ -260,8 +253,7 @@ if uploaded_files:
 st.header("AI Chat for Revision Suggestions")
 st.write(
     """
-Paste in text that contains one or more of the above terms. The app will call the OpenAI API to suggest a revised version that excludes all of the listed keywords.
-**Important:** The revised output must not include any of the glossary keywords.
+Paste in text that contains one or more of the above terms.
     """
 )
 user_text = st.text_area("Enter text for revision suggestions:")
@@ -280,7 +272,7 @@ if st.button("Get Revision Suggestions"):
                     {"role": "system", "content": "You are a helpful assistant that revises text."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.2,
+                temperature=0.3,
             )
             suggestion = response.choices[0].message.content
             st.subheader("Revision Suggestions")

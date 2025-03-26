@@ -173,7 +173,7 @@ st.write(
 This app searches for specific terms related to diversity, equity, inclusion, and more within provided URLs and documents.
 It outputs the URLs (or document sections) where these terms are found.
 For social media URLs, it attempts to extract the date of post.
-You can also paste text into the AI chat section below to receive recommended revisions that remove any of the listed terms.
+You can also paste text into the AI chat section below to receive a revised version that excludes any of the listed terms.
     """
 )
 
@@ -241,26 +241,28 @@ if uploaded_files:
 st.header("AI Chat for Revision Suggestions")
 st.write(
     """
-Paste in text that contains one or more of the above terms. The app will call the OpenAI API to suggest a revised version that avoids using these terms.
+Paste in text that contains one or more of the above terms. The app will call the OpenAI API to suggest a revised version that excludes all of the listed keywords.
+**Important:** The revised output must not include any of the glossary keywords.
     """
 )
 user_text = st.text_area("Enter text for revision suggestions:")
 if st.button("Get Revision Suggestions"):
     if user_text.strip():
+        # Updated prompt explicitly instructing removal of all keywords
         prompt = (
             f"Below is some text that may include any of the following terms:\n{', '.join(KEYWORDS)}\n\n"
-            "Please suggest a revised version of the text that excludes these terms. "
-            "Do not include any of the listed terms in your revised text.\n\n"
+            "Please suggest a revised version of the text that excludes all of these terms. "
+            "Ensure that the final output does not contain any of the listed keywords.\n\n"
             f"Text:\n{user_text}\n\nRevised text:"
         )
         try:
             response = openai.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "system", "content": "You are a helpful assistant that revises text."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.2,
+                temperature=0.5,
             )
             suggestion = response.choices[0].message.content
             st.subheader("Revision Suggestions")

@@ -183,7 +183,7 @@ def process_excel(file):
 st.markdown(
     """
     <style>
-    /* Set main background color */
+    /* Main page background color */
     .reportview-container, .main {
         background-color: #e2e1e1;
     }
@@ -203,17 +203,28 @@ st.markdown(
         color: #e2e1e1;
         margin: 0;
     }
-    /* Section container styling using only the two hex codes */
+    /* Section container styling:
+       - Entire background maroon (#740B0B)
+       - Text color light-gray (#e2e1e1)
+       - No extra border or divider */
     .section-container {
-        background-color: #e2e1e1;
-        border: 2px solid #740B0B;
+        background-color: #740B0B;
+        color: #e2e1e1;
         border-radius: 8px;
-        padding: 15px;
+        padding: 20px;
         margin-bottom: 20px;
-        color: #740B0B;
     }
-    h2, h3 {
-        color: #740B0B;
+    /* Ensure headings and other text are visible on maroon */
+    .section-container h2, .section-container h3, .section-container p, 
+    .section-container label, .section-container span, .section-container div, 
+    .section-container input, .section-container textarea {
+        color: #e2e1e1 !important;
+    }
+    /* Slight tweak for text input backgrounds if you want them maroon too:
+       Comment out if you prefer the default look */
+    .section-container input, .section-container textarea {
+        background-color: #e2e1e1 !important;
+        color: #740B0B !important;
     }
     </style>
     """,
@@ -246,7 +257,7 @@ You can also paste text into the AI chat section below to receive a revised vers
 )
 
 ##############################################
-# URL Analysis Section (within container)    #
+# URL Analysis Section (maroon background)   #
 ##############################################
 st.markdown('<div class="section-container">', unsafe_allow_html=True)
 st.header("URL Analysis")
@@ -270,15 +281,18 @@ if url_input:
                 st.write("No keywords found.")
             if res.get("social_media_date"):
                 st.write("**Social media post date:** " + str(res["social_media_date"]))
-        st.markdown("---")
 st.markdown('</div>', unsafe_allow_html=True)
 
 ##############################################
-# Document Analysis Section (within container)
+# Document Analysis Section (maroon bg)      #
 ##############################################
 st.markdown('<div class="section-container">', unsafe_allow_html=True)
 st.header("Document Analysis")
-uploaded_files = st.file_uploader("Upload documents (PDF, DOCX, Excel, TXT)", type=["pdf", "docx", "xlsx", "xls", "txt"], accept_multiple_files=True)
+uploaded_files = st.file_uploader(
+    "Upload documents (PDF, DOCX, Excel, TXT)",
+    type=["pdf", "docx", "xlsx", "xls", "txt"],
+    accept_multiple_files=True
+)
 doc_results = {}
 if uploaded_files:
     for file in uploaded_files:
@@ -310,11 +324,10 @@ if uploaded_files:
                     st.write(f"**Sheet {analysis['sheet']}:** Keywords found: " + ", ".join(analysis["keywords_found"]))
                 elif "section" in analysis:
                     st.write(f"**Section ({analysis['section']}):** Keywords found: " + ", ".join(analysis["keywords_found"]))
-            st.markdown("---")
 st.markdown('</div>', unsafe_allow_html=True)
 
 ####################################################
-# Revision Suggestions Section (within container)  #
+# Revision Suggestions Section (maroon background) #
 ####################################################
 st.markdown('<div class="section-container">', unsafe_allow_html=True)
 st.header("AI Chat for Revision Suggestions")

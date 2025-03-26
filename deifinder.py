@@ -88,12 +88,10 @@ def search_keywords(text, keywords):
 def process_url(url):
     result = {"url": url, "keywords_found": []}
     social_domains = ["twitter.com", "facebook.com", "instagram.com", "linkedin.com", "tiktok.com"]
-    # Define a custom User-Agent header to mimic a real browser
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
     }
     try:
-        # For social media URLs, try using HTMLSession if available for JS rendering
         if any(domain in url for domain in social_domains) and HAS_HTMLSESSION:
             try:
                 session = HTMLSession()
@@ -116,7 +114,6 @@ def process_url(url):
         found = search_keywords(text, KEYWORDS)
         result["keywords_found"] = found
 
-        # Special handling for social media: attempt to extract the post date
         if any(domain in url for domain in social_domains):
             date = None
             time_tag = soup.find("time")
@@ -180,17 +177,17 @@ def process_excel(file):
         results.append({"error": str(e)})
     return results
 
-#################################
-# Custom CSS for Aesthetic Look #
-#################################
+#######################################
+# Custom CSS for Aesthetics and Layout#
+#######################################
 st.markdown(
     """
     <style>
-    /* Set the main background color */
-    .reportview-container {
+    /* Main background color */
+    .reportview-container, .main {
         background-color: #e2e1e1;
     }
-    /* Style for header */
+    /* Header styling */
     .header {
         background-color: #740B0B;
         padding: 20px;
@@ -202,9 +199,33 @@ st.markdown(
         color: #e2e1e1;
         margin-top: 10px;
     }
-    /* Style for section headers */
+    /* Section header styling */
     h2, h3 {
         color: #740B0B;
+    }
+    /* Containers for each function */
+    .section-url {
+        background-color: #FAD4D4;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .section-doc {
+        background-color: #D4E3F9;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .section-revision {
+        background-color: #D4F9D4;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    /* Ensure the header image is visible */
+    .header img {
+        display: block;
+        margin: 0 auto;
     }
     </style>
     """,
@@ -225,7 +246,7 @@ st.markdown(
 )
 
 #####################
-# Streamlit Layout  #
+# App Introduction  #
 #####################
 st.write(
     """
@@ -236,7 +257,10 @@ You can also paste text into the AI chat section below to receive a revised vers
     """
 )
 
-### URL Analysis Section ###
+#######################################
+# URL Analysis Section (with styling) #
+#######################################
+st.markdown('<div class="section-url">', unsafe_allow_html=True)
 st.header("URL Analysis")
 url_input = st.text_input("Enter comma-separated URLs:")
 url_results = []
@@ -259,8 +283,12 @@ if url_input:
             if res.get("social_media_date"):
                 st.write("**Social media post date:** " + str(res["social_media_date"]))
         st.markdown("---")
+st.markdown('</div>', unsafe_allow_html=True)
 
-### Document Analysis Section ###
+###########################################
+# Document Analysis Section (with styling)#
+###########################################
+st.markdown('<div class="section-doc">', unsafe_allow_html=True)
 st.header("Document Analysis")
 uploaded_files = st.file_uploader("Upload documents (PDF, DOCX, Excel, TXT)", type=["pdf", "docx", "xlsx", "xls", "txt"], accept_multiple_files=True)
 doc_results = {}
@@ -295,8 +323,12 @@ if uploaded_files:
                 elif "section" in analysis:
                     st.write(f"**Section ({analysis['section']}):** Keywords found: " + ", ".join(analysis["keywords_found"]))
             st.markdown("---")
+st.markdown('</div>', unsafe_allow_html=True)
 
-### AI Chat Section for Revision Suggestions ###
+#############################################
+# Revision Suggestions Section (with styling)
+#############################################
+st.markdown('<div class="section-revision">', unsafe_allow_html=True)
 st.header("AI Chat for Revision Suggestions")
 st.write(
     """
@@ -306,7 +338,6 @@ Paste in text that contains one or more of the above terms.
 user_text = st.text_area("Enter text for revision suggestions:")
 if st.button("Get Revision Suggestions"):
     if user_text.strip():
-        # Strengthened prompt with explicit instructions to remove any occurrences of the keywords.
         prompt = (
             f"Below is some text that may include one or more of the following terms:\n{', '.join(KEYWORDS)}\n\n"
             "Your task is to completely revise the text by removing or replacing any instances of the above keywords. "
@@ -331,3 +362,4 @@ if st.button("Get Revision Suggestions"):
             st.error(f"Error with OpenAI API: {e}")
     else:
         st.warning("Please enter some text to revise.")
+st.markdown('</div>', unsafe_allow_html=True)
